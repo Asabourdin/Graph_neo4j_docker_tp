@@ -26,7 +26,7 @@ def wait_for_postgres(max_retries=30, delay=2):
         try:
             conn = psycopg2.connect(**POSTGRES_CONFIG)
             conn.close()
-            print("✅ PostgreSQL is ready!")
+            print("PostgreSQL is ready!")
             return True
         except psycopg2.OperationalError:
             if i < max_retries - 1:
@@ -38,14 +38,18 @@ def wait_for_postgres(max_retries=30, delay=2):
 
 def wait_for_neo4j(max_retries=30, delay=2):
     """Wait for Neo4j to be ready."""
-    print("⏳ Waiting for Neo4j...")
+    print("Waiting for Neo4j...")
     for i in range(max_retries):
         try:
+            print('1')
             driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+            print('2')
             with driver.session() as session:
+                print('3')
                 session.run("RETURN 1")
+                print('4')
             driver.close()
-            print("✅ Neo4j is ready!")
+            print("Neo4j is ready!")
             return True
         except Exception as e:
             if i < max_retries - 1:
@@ -64,7 +68,7 @@ def run_cypher(driver, query, params=None):
 
 def run_cypher_file(driver, filepath):
     """Execute multiple cypher statements from a file."""
-    print(f"📄 Running Cypher file: {filepath}")
+    print(f"Running Cypher file: {filepath}")
     with open(filepath, 'r') as f:
         content = f.read()
     
@@ -74,9 +78,9 @@ def run_cypher_file(driver, filepath):
     for stmt in statements:
         try:
             run_cypher(driver, stmt)
-            print(f"✅ Executed: {stmt[:50]}...")
+            print(f"Executed: {stmt[:50]}...")
         except Exception as e:
-            print(f"⚠️  Warning executing statement: {e}")
+            print(f"Warning executing statement: {e}")
 
 
 def chunk(df, size=500):
@@ -86,15 +90,16 @@ def chunk(df, size=500):
 
 
 def etl():
-    # Ensure dependencies are ready
+    """Main etl function to load data from postgre to neo4j"""
+    # Dependencies
     wait_for_postgres()
     wait_for_neo4j()
 
-    # Get path to Cypher schema file
+    # Path to Cypher schema file
     queries_path = Path(__file__).with_name("queries.cypher")
 
-    # Connect to databases
-    print("🔌 Connecting to databases...")
+    # Connect to db
+    print("Connecting to databases...")
     pg_conn = psycopg2.connect(**POSTGRES_CONFIG)
     neo4j_driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
 
@@ -103,10 +108,10 @@ def etl():
         if queries_path.exists():
             run_cypher_file(neo4j_driver, queries_path)
         else:
-            print("⚠️  queries.cypher not found, skipping schema setup")
+            print("queries.cypher not found, skipping schema setup")
 
         # 2. Extract data from PostgreSQL
-        print("\n📊 Extracting data from PostgreSQL...")
+        print("\nExtracting data from PostgreSQL...")
         
         categories_df = pd.read_sql("SELECT * FROM categories", pg_conn)
         print(f"  - Categories: {len(categories_df)} rows")
@@ -127,10 +132,10 @@ def etl():
         print(f"  - Events: {len(events_df)} rows")
 
         # 3. Load data into Neo4j
-        print("\n🔄 Loading data into Neo4j...")
+        print("\nLoading data into Neo4j...")
         
         # Load Categories
-        print("  📦 Loading Categories...")
+        print("Loading Categories...")
         for _, row in categories_df.iterrows():
             run_cypher(neo4j_driver, """
                 MERGE (c:Category {id: $id})
@@ -138,7 +143,7 @@ def etl():
             """, {"id": row['id'], "name": row['name']})
         
         # Load Products with relationships to Categories
-        print("  🛍️  Loading Products...")
+        print("Loading Products...")
         for _, row in products_df.iterrows():
             run_cypher(neo4j_driver, """
                 MERGE (p:Product {id: $id})
@@ -154,7 +159,7 @@ def etl():
             })
         
         # Load Customers
-        print("  👥 Loading Customers...")
+        print("Loading Customers...")
         for _, row in customers_df.iterrows():
             run_cypher(neo4j_driver, """
                 MERGE (c:Customer {id: $id})
@@ -166,9 +171,9 @@ def etl():
             })
         
         # Load Orders with relationships to Customers
-        print("  📝 Loading Orders...")
+        print("Loading Orders...")
         for _, row in orders_df.iterrows():
-            # 👇 ensure proper ISO 8601 like 2024-04-01T10:15:00+00:00
+            # ensure proper date format (since we had issues beforehand)
             ts_iso = row['ts'].isoformat()
             run_cypher(neo4j_driver, """
                 MERGE (o:Order {id: $id})
@@ -183,7 +188,7 @@ def etl():
             })
         
         # Load Order Items (Order-Product relationships)
-        print("  🔗 Loading Order Items...")
+        print("Loading Order Items...")
         for _, row in order_items_df.iterrows():
             run_cypher(neo4j_driver, """
                 MATCH (o:Order {id: $order_id})
@@ -197,7 +202,7 @@ def etl():
             })
         
         # Load Events (Customer-Product interactions)
-        print("  🎯 Loading Events...")
+        print("Loading Events...")
         for _, row in events_df.iterrows():
             event_type = row['event_type'].upper()  # VIEW, CLICK, ADD_TO_CART
             rel_type = event_type  # good enough
@@ -215,7 +220,7 @@ def etl():
                 "ts": ts_iso
             })
 
-        print("\n✅ ETL done.")
+        print("\nETL done !")
 
     finally:
         pg_conn.close()

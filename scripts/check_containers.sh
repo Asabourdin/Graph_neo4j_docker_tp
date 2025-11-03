@@ -25,7 +25,7 @@ if [ "$HTTP_CODE" == "200" ]; then
     cat /tmp/health.json
     echo ""
 else
-    echo "✘ FastAPI health check failed (HTTP $HTTP_CODE)"
+    echo "FastAPI health check failed (HTTP $HTTP_CODE)"
     exit 1
 fi
 
@@ -39,9 +39,9 @@ else
 fi
 
 if [ $? -eq 0 ]; then
-    echo "✔ Orders query OK"
+    echo "Orders query OK"
 else
-    echo "✘ Orders query failed"
+    echo "Orders query failed"
     exit 1
 fi
 
@@ -55,9 +55,9 @@ else
 fi
 
 if [ $? -eq 0 ]; then
-    echo "✔ now() query OK"
+    echo "now() query OK"
 else
-    echo "✘ now() query failed"
+    echo "now() query failed"
     exit 1
 fi
 
@@ -72,11 +72,11 @@ else
 fi
 
 if [[ "$ETL_OUTPUT" == *"ETL done"* ]] || [ $? -eq 0 ]; then
-    echo "✔ ETL output OK (ETL done.)"
+    echo "ETL output OK"
 else
-    echo "✘ ETL failed"
+    echo "ETL failed"
     exit 1
 fi
 
 echo ""
-echo "🎉 All checks passed!"
+echo "All checks passed !"
