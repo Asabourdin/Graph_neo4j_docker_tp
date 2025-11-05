@@ -13,7 +13,7 @@ else
     PG_HOST="localhost"
 fi
 
-echo "🔍 Running checks in $MODE mode..."
+echo "Running checks in $MODE mode..."
 echo ""
 
 # 1. Check FastAPI health
@@ -65,17 +65,19 @@ fi
 echo ""
 echo "› ETL: python /work/app/etl.py"
 if [ "$MODE" == "container" ]; then
-    cd /work/app && python etl.py
-    ETL_OUTPUT=$?
+    if cd /work/app && python etl.py; then
+        echo " ETL output OK"
+    else
+        echo " ETL failed"
+        exit 1
+    fi
 else
-    ETL_OUTPUT=$(docker compose exec -T app python /work/app/etl.py | tee /dev/tty | tail -1)
-fi
-
-if [[ "$ETL_OUTPUT" == *"ETL done"* ]] || [ $? -eq 0 ]; then
-    echo "ETL output OK"
-else
-    echo "ETL failed"
-    exit 1
+    if docker compose exec -T app python /work/app/etl.py; then
+        echo " ETL output OK"
+    else
+        echo " ETL failed"
+        exit 1
+    fi
 fi
 
 echo ""

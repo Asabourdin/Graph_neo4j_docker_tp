@@ -14,14 +14,14 @@ POSTGRES_CONFIG = {
     "database": os.getenv("POSTGRES_DB", "shop")
 }
 
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://neo4j:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 
 
 def wait_for_postgres(max_retries=30, delay=2):
     """Wait for PostgreSQL to be ready."""
-    print("⏳ Waiting for PostgreSQL...")
+    print("Waiting for PostgreSQL...")
     for i in range(max_retries):
         try:
             conn = psycopg2.connect(**POSTGRES_CONFIG)
@@ -36,7 +36,7 @@ def wait_for_postgres(max_retries=30, delay=2):
     return False
 
 
-def wait_for_neo4j(max_retries=30, delay=2):
+def wait_for_neo4j(max_retries=10, delay=1):
     """Wait for Neo4j to be ready."""
     print("Waiting for Neo4j...")
     for i in range(max_retries):
