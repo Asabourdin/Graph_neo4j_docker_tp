@@ -1,0 +1,3 @@
+Here, we build a small recommandation system. We use PostgreSQL to store the data, an etl script to move this data into Neo4j as a graph, and a FastAPI app to get product recommendations.
+In terms of content, we could use neo4j to implement new recommandation bases such as consumer behavior (recommend items that customers viewed or added to their cart after buying one item), or more simply recommend items of similar category to the one just bought.
+Technically, we could also improve our system. Our ETL for instance, would need to be able to update new data instead of reloading everything. We would also need better error handling and a more secure passwords and database settings handling (with for instance, hidden environment variables).
